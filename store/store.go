@@ -9,7 +9,7 @@ import (
 )
 
 type Store interface {
-	evict(cache *hash.Hash)
+	Evict(cache *hash.Hash)
 }
 
 type StrStore struct {

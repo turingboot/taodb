@@ -17,7 +17,7 @@ const (
 	entryHeaderSize = 22
 )
 
-type record struct {
+type Record struct {
 	meta *meta
 	// State represents two fields, high 8 bits is the data type, low 8 bits is operation mark.
 	state uint16
@@ -38,8 +38,8 @@ func (m *meta) len() uint32 {
 	return m.keySize + m.memberSize + m.valueSize
 }
 
-func newInternal(key, member, value []byte, state uint16, timestamp uint64) *record {
-	return &record{
+func newInternal(key, member, value []byte, state uint16, timestamp uint64) *Record {
+	return &Record{
 		state:     state,
 		timestamp: timestamp,
 		meta: &meta{
@@ -53,7 +53,7 @@ func newInternal(key, member, value []byte, state uint16, timestamp uint64) *rec
 	}
 }
 
-func newRecord(key, member []byte, t, mark uint16) *record {
+func newRecord(key, member []byte, t, mark uint16) *Record {
 	var state uint16 = 0
 	// set type and mark.
 	state = state | (t << 8)
@@ -61,7 +61,7 @@ func newRecord(key, member []byte, t, mark uint16) *record {
 	return newInternal(key, member, nil, state, uint64(time.Now().UnixNano()))
 }
 
-func newRecordWithValue(key, member, value []byte, t, mark uint16) *record {
+func newRecordWithValue(key, member, value []byte, t, mark uint16) *Record {
 	var state uint16 = 0
 	// set type and mark.
 	state = state | (t << 8)
@@ -69,7 +69,7 @@ func newRecordWithValue(key, member, value []byte, t, mark uint16) *record {
 	return newInternal(key, member, value, state, uint64(time.Now().UnixNano()))
 }
 
-func newRecordWithExpire(key, member []byte, deadline int64, t, mark uint16) *record {
+func newRecordWithExpire(key, member []byte, deadline int64, t, mark uint16) *Record {
 	var state uint16 = 0
 	// set type and mark.
 	state = state | (t << 8)
@@ -78,7 +78,7 @@ func newRecordWithExpire(key, member []byte, deadline int64, t, mark uint16) *re
 	return newInternal(key, member, nil, state, uint64(deadline))
 }
 
-func (e *record) size() uint32 {
+func (e *Record) size() uint32 {
 	return entryHeaderSize + e.meta.len()
 }
 
@@ -90,7 +90,7 @@ func (e *record) size() uint32 {
 //	|----------------------------------------------------------------------------------------------------------------|
 //	| uint32| uint32  | uint32 | uint16 | uint64     | []byte | []byte | []byte |
 //	|----------------------------------------------------------------------------------------------------------------|
-func (e *record) encode() ([]byte, error) {
+func (e *Record) encode() ([]byte, error) {
 	if e == nil || e.meta.keySize == 0 {
 		return nil, ErrInvalidEntry
 	}
@@ -113,14 +113,14 @@ func (e *record) encode() ([]byte, error) {
 	return buf, nil
 }
 
-func decode(buf []byte) (*record, error) {
+func decode(buf []byte) (*Record, error) {
 	ks := binary.BigEndian.Uint32(buf[0:4])
 	ms := binary.BigEndian.Uint32(buf[4:8])
 	vs := binary.BigEndian.Uint32(buf[8:12])
 	state := binary.BigEndian.Uint16(buf[12:14])
 	timestamp := binary.BigEndian.Uint64(buf[14:22])
 
-	return &record{
+	return &Record{
 		meta: &meta{
 			keySize:    ks,
 			memberSize: ms,
@@ -134,10 +134,10 @@ func decode(buf []byte) (*record, error) {
 	}, nil
 }
 
-func (e *record) getType() uint16 {
+func (e *Record) getType() uint16 {
 	return e.state >> 8
 }
 
-func (e *record) getMark() uint16 {
+func (e *Record) getMark() uint16 {
 	return e.state & (2<<7 - 1)
 }
