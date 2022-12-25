@@ -4,7 +4,9 @@ import (
 	"github.com/arriqaaq/aol"
 	"github.com/arriqaaq/hash"
 	"sync"
+	"taodb/global"
 	"taodb/store"
+	"time"
 )
 
 type TaoDB struct {
@@ -39,15 +41,90 @@ func New(config *Config) (taoDB *TaoDB, err error) {
 	evictionInterval := config.evictionInterval()
 
 	if evictionInterval > 0 {
-		//Todo
-		db.evictors = []evictor{}
+		db.evictors = []evictor{
+			newSweeperWithStore(db.strS, evictionInterval),
+			newSweeperWithStore(db.hashS, evictionInterval),
+			newSweeperWithStore(db.setS, evictionInterval),
+			newSweeperWithStore(db.zsetS, evictionInterval),
+		}
+	}
+	for _, evictor := range db.evictors {
+		go evictor.run(db.exps)
+	}
+
+	db.persist = config.Path != ""
+	if db.persist {
+		opts := aol.DefaultOptions
+		opts.NoSync = config.NoSync
+
+		l, err := aol.Open(config.Path, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		db.log = l
+
+		// load data from append-only log
+		err = db.load()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return db, nil
 }
 
-// Todo write
-func (t *TaoDB) write(r *record) error {
+func (t *TaoDB) setTTL(dType global.DataType, key string, ttl int64) {
+	t.exps.HSet(dType, key, ttl)
+}
+
+func (t *TaoDB) getTTL(dType global.DataType, key string) interface{} {
+	return t.exps.HGet(dType, key)
+}
+
+func (t *TaoDB) hasExpired(key string, dType global.DataType) (expired bool) {
+	ttl := t.exps.HGet(dType, key)
+	if ttl == nil {
+		return
+	}
+	if time.Now().Unix() > ttl.(int64) {
+		expired = true
+	}
+	return
+}
+
+func (t *TaoDB) evict(key string, dType global.DataType) {
+	ttl := t.exps.HGet(dType, key)
+	if ttl == nil {
+		return
+	}
+
+	var r *Record
+	if time.Now().Unix() > ttl.(int64) {
+		switch dType {
+		case global.String:
+			r = newRecord([]byte(key), nil, global.StringRecord, global.StringRem)
+			t.strS.Delete([]byte(key))
+		case global.Hash:
+			r = newRecord([]byte(key), nil, global.HashRecord, global.HashHClear)
+			t.hashS.HClear(key)
+		case global.Set:
+			r = newRecord([]byte(key), nil, global.SetRecord, global.SetSClear)
+			t.setS.SClear(key)
+		case global.ZSet:
+			r = newRecord([]byte(key), nil, global.ZSetRecord, global.ZSetZClear)
+			t.zsetS.ZClear(key)
+		}
+
+		if err := t.write(r); err != nil {
+			panic(err)
+		}
+
+		t.exps.HDel(dType, key)
+	}
+}
+
+func (t *TaoDB) write(r *Record) error {
 	if t.log != nil {
 		return nil
 	}

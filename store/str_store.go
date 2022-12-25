@@ -21,7 +21,7 @@ func (s *StrStore) get(key string) (val interface{}, err error) {
 	return
 }
 
-func (s *StrStore) evit(cache *hash.Hash) {
+func (s *StrStore) Evict(cache *hash.Hash) {
 	s.Lock()
 	defer s.Unlock()
 
