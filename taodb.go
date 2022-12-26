@@ -36,6 +36,7 @@ func New(config *Config) (taoDB *TaoDB, err error) {
 		hashS:  store.NewHashStore(),
 		setS:   store.NewSetStore(),
 		zsetS:  store.NewZSetStore(),
+		exps:   hash.New(),
 	}
 
 	evictionInterval := config.evictionInterval()
@@ -47,9 +48,11 @@ func New(config *Config) (taoDB *TaoDB, err error) {
 			newSweeperWithStore(db.setS, evictionInterval),
 			newSweeperWithStore(db.zsetS, evictionInterval),
 		}
-	}
-	for _, evictor := range db.evictors {
-		go evictor.run(db.exps)
+
+		for _, evictor := range db.evictors {
+			go evictor.run(db.exps)
+		}
+
 	}
 
 	db.persist = config.Path != ""
@@ -64,11 +67,12 @@ func New(config *Config) (taoDB *TaoDB, err error) {
 
 		db.log = l
 
+		//Todo 这里是有问题的，需要解决
 		// load data from append-only log
-		err = db.load()
-		if err != nil {
-			return nil, err
-		}
+		//err = db.load()
+		//if err != nil {
+		//	return nil, err
+		//}
 	}
 
 	return db, nil
