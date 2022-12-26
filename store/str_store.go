@@ -13,7 +13,7 @@ func NewStrStore() *StrStore {
 	return n
 }
 
-func (s *StrStore) get(key string) (val interface{}, err error) {
+func (s *StrStore) Get(key string) (val interface{}, err error) {
 	val = s.Search([]byte(key))
 	if val == nil {
 		return nil, global.ErrInvalidKey

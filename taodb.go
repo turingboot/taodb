@@ -10,7 +10,7 @@ import (
 )
 
 type TaoDB struct {
-	mu     sync.RWMutex
+	Mu     sync.RWMutex
 	config *Config
 	exps   *hash.Hash //hashmap of ttl keys
 
