@@ -67,7 +67,6 @@ func New(config *Config) (taoDB *TaoDB, err error) {
 
 		db.log = l
 
-		//Todo 这里是有问题的，需要解决
 		//load data from append-only log
 		err = db.load()
 		if err != nil {
