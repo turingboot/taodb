@@ -113,18 +113,20 @@ func (s *SkipList) SlInsert(key string, value interface{}) *SkipListNode {
 		updates[i].level[i].span++
 	}
 
-	//设置新节点的后退指针
-	if updates[0] == s.header {
-		x.backward = nil
-	} else {
-		x.backward = updates[0]
-	}
+	////设置新节点的后退指针
+	//if updates[0] == s.header {
+	//	x.backward = nil
+	//} else {
+	//	x.backward = updates[0]
+	//}
 
 	if x.level[0].forward != nil {
-		x.level[0].forward.backward = x
-	} else {
+		//x.level[0].forward.backward = x
 		s.tail = x
 	}
+	//} else {
+	//	s.tail = x
+	//}
 
 	s.length++
 	return x

@@ -1,11 +1,11 @@
 package skiplist
 
 type SkipListNode struct {
-	level    []*skipListLevel
-	forward  *SkipListNode
-	backward *SkipListNode
-	//跳跃表节点按照score从小到大排序
-	score float32
+	level []*skipListLevel
+	//forward  *SkipListNode
+	//backward *SkipListNode
+	////跳跃表节点按照score从小到大排序
+	//score float32
 	key   string
 	value interface{}
 }
