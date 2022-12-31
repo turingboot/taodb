@@ -15,16 +15,25 @@ func main() {
 	defer db.Close()
 
 	err = db.Update(func(tx *taodb.Tx) error {
-		err := tx.Set("mykey", "myvalue")
-		return err
-	})
 
-	err = db.View(func(tx *taodb.Tx) error {
-		val, err := tx.Get("mykey")
-		if err != nil {
-			return err
+		for i := 0; i < 100000; i++ {
+			err := tx.Set(fmt.Sprintf("mykey%d", i), fmt.Sprintf("myvalue%d", i))
+			if err != nil {
+				return err
+			}
 		}
-		fmt.Printf("value is %s\n", val)
 		return nil
 	})
+
+	//err = db.View(func(tx *taodb.Tx) error {
+	//
+	//	for i := 0; i < 100000; i++ {
+	//		val, err := tx.Get(fmt.Sprintf("mykey%d", i))
+	//		if err != nil {
+	//			return err
+	//		}
+	//		fmt.Printf("value is %s\n", val)
+	//	}
+	//	return nil
+	//})
 }
