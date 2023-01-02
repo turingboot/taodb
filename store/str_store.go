@@ -10,6 +10,7 @@ import (
 func NewStrStore() *StrStore {
 	n := &StrStore{}
 	n.Tree = art.NewTree()
+	//n.SkipList = skiplist.SlCreate()
 	return n
 }
 

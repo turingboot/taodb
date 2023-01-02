@@ -15,6 +15,7 @@ type Store interface {
 type StrStore struct {
 	sync.RWMutex
 	*art.Tree
+	//*skiplist.SkipList
 }
 
 type HashStore struct {

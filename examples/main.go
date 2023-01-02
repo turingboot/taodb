@@ -24,16 +24,16 @@ func main() {
 		}
 		return nil
 	})
+	err = db.View(func(tx *taodb.Tx) error {
 
-	//err = db.View(func(tx *taodb.Tx) error {
-	//
-	//	for i := 0; i < 100000; i++ {
-	//		val, err := tx.Get(fmt.Sprintf("mykey%d", i))
-	//		if err != nil {
-	//			return err
-	//		}
-	//		fmt.Printf("value is %s\n", val)
-	//	}
-	//	return nil
-	//})
+		for i := 0; i < 100000; i++ {
+			val, err := tx.Get(fmt.Sprintf("mykey%d", i))
+			if err != nil {
+				return err
+			}
+			fmt.Printf("value is %s\n", val)
+		}
+		return nil
+	})
+
 }
