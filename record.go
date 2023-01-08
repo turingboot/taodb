@@ -20,18 +20,18 @@ const (
 type Record struct {
 	meta *meta
 	// State represents two fields, high 8 bits is the data type, low 8 bits is operation mark.
-	state uint16
+	state uint16 //2
 	// Timestamp is the time when entry was written.
-	timestamp uint64
+	timestamp uint64 //8
 }
 
 type meta struct {
 	key        []byte
 	member     []byte
 	value      []byte
-	keySize    uint32
-	memberSize uint32
-	valueSize  uint32
+	keySize    uint32 //4
+	memberSize uint32 //4
+	valueSize  uint32 //4
 }
 
 func (m *meta) len() uint32 {

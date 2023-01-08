@@ -7,14 +7,14 @@ type SkipListNode struct {
 	////跳跃表节点按照score从小到大排序
 	//score float32
 	key   string
-	value interface{}
+	value any
 }
 
-func (s SkipListNode) Key() string {
+func (s *SkipListNode) Key() string {
 	return s.key
 }
 
-func (s SkipListNode) Value() interface{} {
+func (s *SkipListNode) Value() interface{} {
 	return s.value
 }
 
@@ -24,7 +24,7 @@ type skipListLevel struct {
 	span uint
 }
 
-func slCreateNode(level int, key string, value interface{}) *SkipListNode {
+func createNode(level int, key string, value interface{}) *SkipListNode {
 	node := &SkipListNode{
 		key:   key,
 		value: value,

@@ -35,7 +35,6 @@ func Remove() {
 
 // 在at节点后插入目标节点e
 func (l *LinkedList) insert(e, at *ListNode) *ListNode {
-
 	e.prev = at
 	e.next = at.next
 	e.prev.next = e
