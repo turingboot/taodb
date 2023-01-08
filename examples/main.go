@@ -16,7 +16,7 @@ func main() {
 
 	err = db.Update(func(tx *taodb.Tx) error {
 
-		for i := 0; i < 100000; i++ {
+		for i := 0; i < 100; i++ {
 			err := tx.Set(fmt.Sprintf("mykey%d", i), fmt.Sprintf("myvalue%d", i))
 			if err != nil {
 				return err
@@ -26,7 +26,7 @@ func main() {
 	})
 	err = db.View(func(tx *taodb.Tx) error {
 
-		for i := 0; i < 100000; i++ {
+		for i := 0; i < 100; i++ {
 			val, err := tx.Get(fmt.Sprintf("mykey%d", i))
 			if err != nil {
 				return err

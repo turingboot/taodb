@@ -149,7 +149,7 @@ func (s *SkipList) deleteNode(x *SkipListNode, updates []*SkipListNode) {
 	s.length--
 }
 
-func (s *SkipList) Remove(key string) {
+func (s *SkipList) Delete(key string) {
 	update := make([]*SkipListNode, SKIPLIST_MAXLEVEL)
 
 	x := s.header
