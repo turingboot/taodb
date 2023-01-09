@@ -28,36 +28,14 @@ type entry struct {
 	mu    *sync.RWMutex
 }
 
-// the hint stored format:
-// size = 4+4+8+4 = 20
-//
-//	|----------------------------------------------------------------------------------------------------------------|
-//	|  timeStamp | key_sz | value_sz | value_ops |   key  |
-//	|----------------------------------------------------------------------------------------------------------------|
-//	|   uint32 | uint32   |  uint32   |  uint64   |  []byte |
-//	|----------------------------------------------------------------------------------------------------------------|
-type hint struct {
-	key  []byte
-	meta *metaData
-	mu   *sync.RWMutex
-}
-
-type metaData struct {
-	timeStamp   uint32
-	fileID      uint32
-	keySize     uint32
-	valueSize   uint32
-	valueOffset uint64
-}
-
-func newMetaData(timeStamp uint32, fileID uint32, keySize uint32, valueSize uint32, valueOffset uint64) *metaData {
-	return &metaData{timeStamp: timeStamp, fileID: fileID, keySize: keySize, valueSize: valueSize, valueOffset: valueOffset}
+func newEntry(crc uint32, key []byte, value []byte, meta *metaData) *entry {
+	return &entry{crc: crc, key: key, value: value, meta: meta}
 }
 
 func (et *entry) setEntryHeaderBuff(buff []byte) []byte {
-	binary.LittleEndian.PutUint32(buff[4:8], et.meta.timeStamp)
-	binary.LittleEndian.PutUint32(buff[8:12], et.meta.keySize)
-	binary.LittleEndian.PutUint32(buff[12:16], et.meta.valueSize)
+	binary.BigEndian.PutUint32(buff[4:8], et.meta.timeStamp)
+	binary.BigEndian.PutUint32(buff[8:12], et.meta.keySize)
+	binary.BigEndian.PutUint32(buff[12:16], et.meta.valueSize)
 
 	return buff
 }
@@ -73,20 +51,20 @@ func (et *entry) Encode() []byte {
 	copy(buff[entryHeaderSize+keySize:entryHeaderSize+keySize+valueSize], et.value)
 
 	crcValue := crc32.ChecksumIEEE(buff[4:])
-	binary.LittleEndian.PutUint32(buff[0:4], crcValue)
+	binary.BigEndian.PutUint32(buff[0:4], uint32(crcValue))
 	return buff
 }
 
 func (et *entry) Decode(buff []byte) (*entry, error) {
 
-	crc := binary.BigEndian.Uint32(buff[0:4])
+	crc := binary.BigEndian.Uint32(buff[:4])
 	if crc32.ChecksumIEEE(buff[4:]) != crc {
 		return nil, errors.New("ChecksumIEEE error")
 	}
 
 	timestamp := binary.BigEndian.Uint32(buff[4:8])
 	ks := binary.BigEndian.Uint32(buff[8:12])
-	vs := binary.BigEndian.Uint32(buff[12:14])
+	vs := binary.BigEndian.Uint32(buff[12:16])
 
 	key, value := make([]byte, ks), make([]byte, vs)
 	copy(key, buff[entryHeaderSize:entryHeaderSize+ks])
@@ -110,12 +88,42 @@ func (et *entry) Len() int64 {
 }
 
 func (h *hint) setHintHeaderBuff(buff []byte) []byte {
-	binary.LittleEndian.PutUint32(buff[0:4], h.meta.timeStamp)
-	binary.LittleEndian.PutUint32(buff[4:8], h.meta.keySize)
-	binary.LittleEndian.PutUint32(buff[8:12], h.meta.valueSize)
-	binary.LittleEndian.PutUint64(buff[12:hintHeaderSize], h.meta.valueOffset)
+	binary.BigEndian.PutUint32(buff[0:4], h.meta.timeStamp)
+	binary.BigEndian.PutUint32(buff[4:8], h.meta.keySize)
+	binary.BigEndian.PutUint32(buff[8:12], h.meta.valueSize)
+	binary.BigEndian.PutUint64(buff[12:hintHeaderSize], h.meta.valueOffset)
 
 	return buff
+}
+
+// the hint stored format:
+// size = 4+4+8+4 = 20
+//
+//	|----------------------------------------------------------------------------------------------------------------|
+//	|  timeStamp | key_sz | value_sz | value_ops |   key  |
+//	|----------------------------------------------------------------------------------------------------------------|
+//	|   uint32 | uint32   |  uint32   |  uint64   |  []byte |
+//	|----------------------------------------------------------------------------------------------------------------|
+type hint struct {
+	key  []byte
+	meta *metaData
+	mu   *sync.RWMutex
+}
+
+func newHint(key []byte, meta *metaData) *hint {
+	return &hint{key: key, meta: meta}
+}
+
+type metaData struct {
+	timeStamp   uint32
+	fileID      uint32
+	keySize     uint32
+	valueSize   uint32
+	valueOffset uint64
+}
+
+func newMetaData(timeStamp uint32, fileID uint32, keySize uint32, valueSize uint32, valueOffset uint64) *metaData {
+	return &metaData{timeStamp: timeStamp, fileID: fileID, keySize: keySize, valueSize: valueSize, valueOffset: valueOffset}
 }
 
 func (h *hint) Len() int64 {
@@ -132,10 +140,10 @@ func (h *hint) Encode() []byte {
 
 func (h *hint) Decode(buff []byte) *hint {
 
-	timestamp := binary.LittleEndian.Uint32(buff[:4])
-	ks := binary.LittleEndian.Uint32(buff[4:8])
-	vs := binary.LittleEndian.Uint32(buff[8:12])
-	vf := binary.LittleEndian.Uint64(buff[12:hintHeaderSize])
+	timestamp := binary.BigEndian.Uint32(buff[:4])
+	ks := binary.BigEndian.Uint32(buff[4:8])
+	vs := binary.BigEndian.Uint32(buff[8:12])
+	vf := binary.BigEndian.Uint64(buff[12:hintHeaderSize])
 
 	key := make([]byte, ks)
 	copy(key, buff[hintHeaderSize:hintHeaderSize+ks])
@@ -149,9 +157,4 @@ func (h *hint) Decode(buff []byte) *hint {
 		key: key,
 	}
 	return tmpHint
-}
-
-type Record struct {
-	e *entry
-	h *hint
 }
